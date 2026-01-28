@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Note</title>
+    <style>
+        :root {
+            --ios-bg: #F2F2F7;
+            --ios-card: #FFFFFF;
+            --ios-blue: #007AFF;
+            --ios-red: #FF3B30;
+            --ios-text: #000000;
+            --ios-text-secondary: #8E8E93;
+            --ios-border: #E5E5EA;
+            --radius: 12px;
+            --shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--ios-bg);
+            margin: 0;
+            padding: 20px;
+            color: var(--ios-text);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Headers */
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 10px 0 5px 0;
+        }
+
+        /* Cards & Inputs */
+        .card {
+            background: var(--ios-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--ios-text-secondary);
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--ios-border);
+            border-radius: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background: #F9F9F9;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--ios-blue);
+            background: #fff;
+        }
+
+        /* Textarea */
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 15px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 17px;
+            line-height: 1.5;
+            resize: vertical;
+            background: var(--ios-card);
+            box-shadow: var(--shadow);
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        
+        textarea:focus {
+            outline: none;
+        }
+
+        /* Buttons */
+        .button-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:active {
+            opacity: 0.7;
+        }
+
+        .btn-primary {
+            background-color: var(--ios-blue);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #E5E5EA;
+            color: var(--ios-blue);
+        }
+
+        .btn-danger {
+            background-color: #E5E5EA;
+            color: var(--ios-red);
+        }
+
+        /* Status Toast */
+        #status-msg {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        #status-msg.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .config-toggle {
+            font-size: 14px;
+            color: var(--ios-blue);
+            cursor: pointer;
+            text-align: right;
+            margin-bottom: 5px;
+        }
+
+        #config-section {
+            display: flex; /* Defaults to flex, hidden via JS if needed */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Cloud Note</h1>
+
+        <div class="card" id="config-section">
+            <div class="input-group">
+                <label>GitHub Personal Access Token</label>
+                <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div class="input-group" style="flex:1">
+                    <label>Username</label>
+                    <input type="text" id="gh-owner" placeholder="e.g. johndoe">
+                </div>
+                <div class="input-group" style="flex:1">
+                    <label>Repository</label>
+                    <input type="text" id="gh-repo" placeholder="e.g. notes">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="input-group">
+                <label>File Name</label>
+                <input type="text" id="file-name" placeholder="notes.txt" value="notes.txt">
+            </div>
+            <div class="button-row">
+                <button class="btn-secondary" onclick="loadFile()">Load</button>
+                <button class="btn-primary" onclick="saveFile()">Save</button>
+            </div>
+        </div>
+
+        <textarea id="editor" placeholder="Start typing your notes here..."></textarea>
+        
+        <div class="button-row">
+            <button class="btn-danger" onclick="clearText()">Clear Text</button>
+        </div>
+    </div>
+
+    <div id="status-msg">Operation successful</div>
+
+    <script>
+        // --- Configuration & Helpers ---
+
+        function getCredentials() {
+            const token = document.getElementById('gh-token').value.trim();
+            const owner = document.getElementById('gh-owner').value.trim();
+            const repo = document.getElementById('gh-repo').value.trim();
+            
+            if (!token || !owner || !repo) {
+                showStatus("Please fill in Token, Username, and Repo details.", true);
+                return null;
+            }
+            return { token, owner, repo };
+        }
+
+        function getApiUrl(filename) {
+            const creds = getCredentials();
+            if (!creds) return null;
+            return `https://api.github.com/repos/${creds.owner}/${creds.repo}/contents/${filename}`;
+        }
+
+        // Unicode-safe Base64 Encoding/Decoding
+        function utf8_to_b64(str) {
+            return window.btoa(unescape(encodeURIComponent(str)));
+        }
+
+        function b64_to_utf8(str) {
+            return decodeURIComponent(escape(window.atob(str)));
+        }
+
+        function showStatus(message, isError = false) {
+            const toast = document.getElementById('status-msg');
+            toast.innerText = message;
+            toast.style.background = isError ? 'rgba(255, 59, 48, 0.9)' : 'rgba(0, 0, 0, 0.8)';
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- Core Functions ---
+
+        async function loadFile() {
+            const fileName = document.getElementById('file-name').value.trim();
+            if (!fileName) return showStatus("Please enter a file name.", true);
+
+            const creds = getCredentials();
+            if (!creds) return;
+
+            const url = getApiUrl(fileName);
+
+            showStatus("Loading...");
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${creds.token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (response.status === 404) {
+                    showStatus("File not found. You can create it by saving.", true);
+                    document.getElementById('editor').value = "";
+                    return;
+                }
+
+                if (!response.ok) throw new Error(`Error: ${response.statusText}`);
+
+                const data = await response.json();
+                
+                // GitHub returns content in base64
+                const content = b64_to_utf8(data.content);
+                document.getElementById('editor').value = content;
+                showStatus("File loaded successfully.");
+
+            } catch (error) {
+                console.error(error);
+                showStatus(`Failed to load: ${error.message}`, true);
+            }
+        }
+
+        async function saveFile() {
+            const fileName = document.getElementById('file-name').value.trim();
+            const content = document.getElementById('editor').value;
+
+            if (!fileName) return showStatus("Please enter a file name.", true);
+
+            const creds = getCredentials();
+            if (!creds) return;
+
+            const url = getApiUrl(fileName);
+            showStatus("Saving...");
+
+            try {
+                // 1. We first need to check if the file exists to get its SHA (required for updates)
+                let sha = null;
+                
+                const checkResponse = await fetch(url, {
+                    headers: { 'Authorization': `token ${creds.token}` }
+                });
+
+                if (checkResponse.ok) {
+                    const fileData = await checkResponse.json();
+                    sha = fileData.sha;
+                }
+
+                // 2. Prepare the PUT request
+                const body = {
+                    message: `Update ${fileName} via Cloud Note`,
+                    content: utf8_to_b64(content)
+                };
+
+                if (sha) {
+                    body.sha = sha; // Include SHA if updating existing file
+                }
+
+                const putResponse = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${creds.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (!putResponse.ok) throw new Error(`Save failed: ${putResponse.statusText}`);
+
+                showStatus("File saved to GitHub!");
+
+            } catch (error) {
+                console.error(error);
+                showStatus(`Error: ${error.message}`, true);
+            }
+        }
+
+        function clearText() {
+            if(confirm("Are you sure you want to clear the editor?")) {
+                document.getElementById('editor').value = "";
+                showStatus("Editor cleared");
+            }
+        }
+
+        // Optional: Load settings from localStorage to save typing every time
+        window.onload = () => {
+            if(localStorage.getItem('gh_token')) document.getElementById('gh-token').value = localStorage.getItem('gh_token');
+            if(localStorage.getItem('gh_owner')) document.getElementById('gh-owner').value = localStorage.getItem('gh_owner');
+            if(localStorage.getItem('gh_repo')) document.getElementById('gh-repo').value = localStorage.getItem('gh_repo');
+        }
+
+        // Save settings to localStorage when inputs change
+        ['gh-token', 'gh-owner', 'gh-repo'].forEach(id => {
+            document.getElementById(id).addEventListener('change', (e) => {
+                localStorage.setItem(id.replace('-', '_'), e.target.value);
+            });
+        });
+
+    </script>
+</body>
+</html>
